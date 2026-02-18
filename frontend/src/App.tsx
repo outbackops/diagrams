@@ -5,12 +5,15 @@ import { SplitPane } from "@/components/Layout/SplitPane";
 import { PromptInput } from "@/components/Prompt/PromptInput";
 import { AIExplanation } from "@/components/Prompt/AIExplanation";
 import { DiagramCanvas } from "@/components/Canvas/DiagramCanvas";
+import { CodeEditor } from "@/components/Editor/CodeEditor";
+import { ErrorMarker } from "@/components/Editor/ErrorMarker";
 import { useDiagramStore } from "@/stores/diagramStore";
 import { useCodeStore } from "@/stores/codeStore";
 import { useSessionStore } from "@/stores/sessionStore";
+import { useBidirectionalSync } from "@/hooks/useBidirectionalSync";
 import { apiClient } from "@/services/apiClient";
+import { parseDiagramCode } from "@/services/codeParser";
 import type { PromptResponse } from "@/types/api";
-import type { DiagramNode, DiagramEdge, DiagramCluster } from "@/types/diagram";
 
 const App: React.FC = () => {
   const [aiExplanation, setAiExplanation] = useState("");
@@ -21,6 +24,7 @@ const App: React.FC = () => {
   const setGraphModel = useDiagramStore((s) => s.setGraphModel);
   const setSourceCode = useCodeStore((s) => s.setSourceCode);
   const { isLoading, setLoading, setDiagramId } = useSessionStore();
+  const { handleCodeChange } = useBidirectionalSync();
 
   const handlePromptSubmit = useCallback(
     async (prompt: string) => {
@@ -42,9 +46,9 @@ const App: React.FC = () => {
         setAiWarnings(response.warnings);
         setAiModel(response.model_used);
 
-        // Parse generated code into graph model (simplified — full parser in Phase 4)
-        // For now, set an empty graph model until the render result arrives
-        setGraphModel({ nodes: [], edges: [], clusters: [] });
+        // Parse generated code into graph model
+        const model = parseDiagramCode(response.diagram.source_code || "");
+        setGraphModel(model);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to generate diagram";
@@ -71,11 +75,9 @@ const App: React.FC = () => {
         </Sidebar>
         <SplitPane
           left={
-            <div className="flex h-full items-center justify-center bg-gray-50 p-4">
-              <pre className="max-h-full max-w-full overflow-auto whitespace-pre-wrap text-xs text-gray-600">
-                {useCodeStore.getState().sourceCode ||
-                  "// Generated code will appear here"}
-              </pre>
+            <div className="flex h-full flex-col">
+              <CodeEditor onChange={handleCodeChange} />
+              <ErrorMarker />
             </div>
           }
           right={<DiagramCanvas />}

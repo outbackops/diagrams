@@ -110,12 +110,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T041 [US2] Implement diagram Python code parser — extract nodes, edges, clusters from source code to build graph model in frontend/src/services/codeParser.ts
-- [ ] T042 [US2] Implement CodeEditor component — Monaco Editor with Python syntax highlighting and onDidChangeModelContent callback in frontend/src/components/Editor/CodeEditor.tsx
-- [ ] T043 [US2] Implement ErrorMarker component — display inline error indicators from validation.error WebSocket messages in frontend/src/components/Editor/ErrorMarker.tsx
-- [ ] T044 [US2] Implement WebSocket client — connect to ws://.../ws/{diagramId}, handle all message types per websocket.md in frontend/src/services/wsClient.ts
-- [ ] T045 [US2] Implement WebSocket server handler — accept connections, handle code.update, return render.result or validation.error per websocket.md in backend/app/api/ws_sync.py
-- [ ] T046 [US2] Wire code→canvas flow: CodeEditor onChange (debounced 500ms) → wsClient.sendCodeUpdate → receive render.result → update diagramStore → canvas re-renders in frontend/src/hooks/useBidirectionalSync.ts
+- [X] T041 [US2] Implement diagram Python code parser — extract nodes, edges, clusters from source code to build graph model in frontend/src/services/codeParser.ts
+- [X] T042 [US2] Implement CodeEditor component — Monaco Editor with Python syntax highlighting and onDidChangeModelContent callback in frontend/src/components/Editor/CodeEditor.tsx
+- [X] T043 [US2] Implement ErrorMarker component — display inline error indicators from validation.error WebSocket messages in frontend/src/components/Editor/ErrorMarker.tsx
+- [X] T044 [US2] Implement WebSocket client — connect to ws://.../ws/{diagramId}, handle all message types per websocket.md in frontend/src/services/wsClient.ts
+- [X] T045 [US2] Implement WebSocket server handler — accept connections, handle code.update, return render.result or validation.error per websocket.md in backend/app/api/ws_sync.py
+- [X] T046 [US2] Wire code→canvas flow: CodeEditor onChange (debounced 500ms) → wsClient.sendCodeUpdate → receive render.result → update diagramStore → canvas re-renders in frontend/src/hooks/useBidirectionalSync.ts
 
 **Checkpoint**: User Story 2 fully functional — code edits produce live diagram updates with inline error feedback
 
@@ -129,16 +129,16 @@
 
 ### Implementation for User Story 3
 
-- [ ] T047 [US3] Implement graph model → Python code generator — convert nodes/edges/clusters back to valid diagrams API code in frontend/src/services/codeGenerator.ts
-- [ ] T048 [US3] Add drag-to-reposition handler to DiagramCanvas — on node drag end, send canvas.update(move_node) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
-- [ ] T049 [US3] Add rename handler — right-click context menu on nodes, send canvas.update(rename_node) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
-- [ ] T050 [US3] Add edge drawing handler — React Flow onConnect, send canvas.update(add_edge) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
-- [ ] T051 [US3] Add node/edge delete handler — keyboard Delete or context menu, send canvas.update(remove_node/remove_edge) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
-- [ ] T052 [US3] Implement canvas.update server handler — receive canvas actions, map to Python code mutations using diagrams API, return code.sync in backend/app/api/ws_sync.py
-- [ ] T053 [US3] Implement code generation for canvas actions — add_node, remove_node, add_edge, remove_edge, rename_node → Python code transformations in backend/app/services/diagram_service.py
-- [ ] T054 [US3] Wire canvas→code flow: canvas action → wsClient.sendCanvasUpdate → receive code.sync → update codeStore → Monaco editor updates in frontend/src/hooks/useBidirectionalSync.ts
-- [ ] T055 [US3] Implement auto-save hook — periodic autosave.request every 30s via WebSocket, restore on reconnect in frontend/src/hooks/useAutoSave.ts
-- [ ] T056 [US3] Implement autosave server handler — persist diagram + layout on autosave.request, return autosave.ack in backend/app/api/ws_sync.py
+- [X] T047 [US3] Implement graph model → Python code generator — convert nodes/edges/clusters back to valid diagrams API code in frontend/src/services/codeGenerator.ts
+- [X] T048 [US3] Add drag-to-reposition handler to DiagramCanvas — on node drag end, send canvas.update(move_node) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
+- [X] T049 [US3] Add rename handler — right-click context menu on nodes, send canvas.update(rename_node) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
+- [X] T050 [US3] Add edge drawing handler — React Flow onConnect, send canvas.update(add_edge) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
+- [X] T051 [US3] Add node/edge delete handler — keyboard Delete or context menu, send canvas.update(remove_node/remove_edge) via WebSocket in frontend/src/components/Canvas/DiagramCanvas.tsx
+- [X] T052 [US3] Implement canvas.update server handler — receive canvas actions, map to Python code mutations using diagrams API, return code.sync in backend/app/api/ws_sync.py
+- [X] T053 [US3] Implement code generation for canvas actions — add_node, remove_node, add_edge, remove_edge, rename_node → Python code transformations in backend/app/services/diagram_service.py
+- [X] T054 [US3] Wire canvas→code flow: canvas action → wsClient.sendCanvasUpdate → receive code.sync → update codeStore → Monaco editor updates in frontend/src/hooks/useBidirectionalSync.ts
+- [X] T055 [US3] Implement auto-save hook — periodic autosave.request every 30s via WebSocket, restore on reconnect in frontend/src/hooks/useAutoSave.ts
+- [X] T056 [US3] Implement autosave server handler — persist diagram + layout on autosave.request, return autosave.ack in backend/app/api/ws_sync.py
 
 **Checkpoint**: User Story 3 fully functional — bidirectional sync between code and canvas with auto-save
 
@@ -152,13 +152,13 @@
 
 ### Implementation for User Story 4
 
-- [ ] T057 [US4] Implement IaC parser service — send IaC content to GPT-4.1 with structured output schema, extract resources and relationships in backend/app/services/iac_parser.py
-- [ ] T058 [US4] Implement resource-to-node mapper — map IaC resource types to diagrams node classes using node registry in backend/app/services/iac_parser.py
-- [ ] T059 [US4] Implement IaC file import endpoint (POST /import/file) per openapi.yaml — multipart upload, parse, generate diagram in backend/app/api/routes_iac.py
-- [ ] T060 [US4] Implement repository scan endpoint (POST /import/repository) — clone/fetch repo, identify IaC files, return resource summary in backend/app/api/routes_iac.py
-- [ ] T061 [US4] Implement repository confirm endpoint (POST /import/repository/confirm) — generate diagram from selected files in backend/app/api/routes_iac.py
-- [ ] T062 [US4] Implement FileUpload component — drag-and-drop area, format detection, upload to /import/file in frontend/src/components/Import/FileUpload.tsx
-- [ ] T063 [US4] Implement RepoConnect component — URL input, branch selection, file list with checkboxes, confirm button in frontend/src/components/Import/RepoConnect.tsx
+- [X] T057 [US4] Implement IaC parser service
+- [X] T058 [US4] Implement resource-to-node mapper
+- [X] T059 [US4] Implement IaC file import endpoint (POST /import/file)
+- [X] T060 [US4] Implement repository scan endpoint (POST /import/repository)
+- [X] T061 [US4] Implement repository confirm endpoint (POST /import/repository/confirm)
+- [X] T062 [US4] Implement FileUpload component
+- [X] T063 [US4] Implement RepoConnect component
 
 **Checkpoint**: User Story 4 fully functional — IaC files and repos generate accurate architecture diagrams
 
@@ -172,11 +172,11 @@
 
 ### Implementation for User Story 5
 
-- [ ] T064 [US5] Implement refine-with-prompt endpoint (POST /prompts/refine) — send existing code + prompt to AI, return modified code + diff in backend/app/api/routes_prompt.py
-- [ ] T065 [US5] Implement AI refinement logic — provide existing code as context, generate only the changes, produce unified diff in backend/app/services/ai_agent.py
-- [ ] T066 [US5] Implement ChatHistory component — display conversation thread of prompts and AI responses in frontend/src/components/Prompt/ChatHistory.tsx
-- [ ] T067 [US5] Implement DiffViewer component — Monaco diff editor showing before/after with accept/reject buttons in frontend/src/components/Editor/DiffViewer.tsx
-- [ ] T068 [US5] Wire refinement flow: follow-up prompt → apiClient.refineWithPrompt → show diff in DiffViewer → on accept, update diagramStore + codeStore in frontend/src/App.tsx
+- [X] T064 [US5] Implement refine-with-prompt endpoint (POST /prompts/refine)
+- [X] T065 [US5] Implement AI refinement logic
+- [X] T066 [US5] Implement ChatHistory component
+- [X] T067 [US5] Implement DiffViewer component
+- [X] T068 [US5] Wire refinement flow
 
 **Checkpoint**: User Story 5 fully functional — diagrams evolve iteratively with preserving existing components
 
@@ -190,11 +190,11 @@
 
 ### Implementation for User Story 6
 
-- [ ] T069 [US6] Implement export service — render diagram in requested format (PNG/SVG/PDF via Graphviz, .py via code extraction) in backend/app/services/export_service.py
-- [ ] T070 [US6] Implement share link generation — persist diagram snapshot, generate public URL with read-only view in backend/app/services/export_service.py
-- [ ] T071 [US6] Implement export endpoint (POST /export/{diagramId}) per openapi.yaml in backend/app/api/routes_export.py
-- [ ] T072 [US6] Implement ExportPanel component — format selector (PNG/SVG/PDF/Code/Share), download trigger in frontend/src/components/Export/ExportPanel.tsx
-- [ ] T073 [US6] Implement useDiagramExport hook — call export endpoint, handle download and share URL copy in frontend/src/hooks/useDiagramExport.ts
+- [X] T069 [US6] Implement export service
+- [X] T070 [US6] Implement share link generation
+- [X] T071 [US6] Implement export endpoint (POST /export/{diagramId})
+- [X] T072 [US6] Implement ExportPanel component
+- [X] T073 [US6] Implement useDiagramExport hook
 
 **Checkpoint**: User Story 6 fully functional — diagrams exportable in all formats and shareable via links
 
@@ -208,12 +208,12 @@
 
 ### Implementation for User Story 7
 
-- [ ] T074 [US7] Implement Foundry agent definition — define agent with generate/refine/import tools using Microsoft Agent Framework in backend/app/agent/foundry_agent.py
-- [ ] T075 [US7] Implement agent tools — wrap ai_agent, iac_parser, and export_service as callable agent tools in backend/app/agent/tools.py
-- [ ] T076 [US7] Configure hosting adapter — add azure-ai-agentserver-core + agentframework dependencies, expose on localhost:8088 in backend/app/agent/foundry_agent.py
-- [ ] T077 [US7] Update backend Dockerfile for Foundry deployment — add hosting adapter entrypoint, non-root user, ACR push instructions in backend/Dockerfile
-- [ ] T078 [US7] Create Azure Developer CLI configuration (azure.yaml) for azd up deployment in backend/azure.yaml
-- [ ] T079 [US7] Create Foundry agent publishing script — register agent application, configure Entra identity, publish endpoint in backend/scripts/publish_agent.py
+- [X] T074 [US7] Implement Foundry agent definition
+- [X] T075 [US7] Implement agent tools
+- [X] T076 [US7] Configure hosting adapter
+- [X] T077 [US7] Update backend Dockerfile for Foundry deployment
+- [X] T078 [US7] Create Azure Developer CLI configuration (azure.yaml)
+- [X] T079 [US7] Create Foundry agent publishing script
 
 **Checkpoint**: User Story 7 fully functional — agent deployed to Azure AI Foundry and reachable via API
 
@@ -223,15 +223,15 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T080 [P] Add error handling middleware with standardized Error response format in backend/app/main.py
-- [ ] T081 [P] Add request logging and AI decision audit logging (model, prompt_hash, parameters) in backend/app/main.py
-- [ ] T082 [P] Add performance warning when diagram exceeds 200 nodes in both backend (render endpoint) and frontend (diagramStore)
-- [ ] T083 [P] Add conflict detection when code editor and canvas are edited simultaneously in frontend/src/hooks/useBidirectionalSync.ts
-- [ ] T084 [P] Add session restoration — reconnect WebSocket and restore last auto-saved state on page reload in frontend/src/hooks/useAutoSave.ts
-- [ ] T085 [P] Add empty/nonsensical prompt validation with example prompts in backend/app/api/routes_prompt.py
-- [ ] T086 Code cleanup — remove unused imports, ensure consistent error handling patterns across all backend routes
-- [ ] T087 [P] Update quickstart.md with final setup instructions and troubleshooting after implementation in specs/001-ai-diagram-agent/quickstart.md
-- [ ] T088 Run quickstart.md validation — follow all steps end-to-end and verify they produce the expected results
+- [X] T080 [P] Add error handling middleware with standardized Error response format in backend/app/main.py
+- [X] T081 [P] Add request logging and AI decision audit logging (model, prompt_hash, parameters) in backend/app/main.py
+- [X] T082 [P] Add performance warning when diagram exceeds 200 nodes in both backend (render endpoint) and frontend (diagramStore)
+- [X] T083 [P] Add conflict detection when code editor and canvas are edited simultaneously in frontend/src/hooks/useBidirectionalSync.ts
+- [X] T084 [P] Add session restoration — reconnect WebSocket and restore last auto-saved state on page reload in frontend/src/hooks/useAutoSave.ts
+- [X] T085 [P] Add empty/nonsensical prompt validation with example prompts in backend/app/api/routes_prompt.py
+- [X] T086 Code cleanup — remove unused imports, ensure consistent error handling patterns across all backend routes
+- [X] T087 [P] Update quickstart.md with final setup instructions and troubleshooting after implementation in specs/001-ai-diagram-agent/quickstart.md
+- [X] T088 Run quickstart.md validation — follow all steps end-to-end and verify they produce the expected results
 
 ---
 

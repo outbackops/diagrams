@@ -11,10 +11,13 @@ import type {
   GraphModel,
 } from "@/types/diagram";
 
+const MAX_NODES_WARNING = 200;
+
 interface DiagramState {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
   clusters: DiagramCluster[];
+  performanceWarning: string | null;
 
   // Actions
   setGraphModel: (model: GraphModel) => void;
@@ -33,12 +36,17 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   nodes: [],
   edges: [],
   clusters: [],
+  performanceWarning: null,
 
   setGraphModel: (model) =>
     set({
       nodes: model.nodes,
       edges: model.edges,
       clusters: model.clusters,
+      performanceWarning:
+        model.nodes.length > MAX_NODES_WARNING
+          ? `Diagram has ${model.nodes.length} nodes (>${MAX_NODES_WARNING}). Consider splitting into sub-diagrams for better performance.`
+          : null,
     }),
 
   addNode: (node) => set((state) => ({ nodes: [...state.nodes, node] })),

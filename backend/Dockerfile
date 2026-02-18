@@ -25,10 +25,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend source
 COPY backend/app ./app
 
-# Expose port
+# Expose ports: 8000 for FastAPI, 8088 for Foundry hosting adapter
 EXPOSE 8000
+EXPOSE 8088
 
 # Run as non-root user
 USER diaguser
 
+# Default: run FastAPI. For Foundry deployment, override CMD with hosting adapter.
+# Foundry entrypoint: python -m azure.ai.agentserver
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

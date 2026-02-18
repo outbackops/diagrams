@@ -1,0 +1,12 @@
+# Azure Developer CLI (azd) configuration for Foundry agent deployment
+name: diagram-agent
+metadata:
+  template: diagram-agent@0.1.0
+services:
+  backend:
+    project: ./backend
+    language: python
+    host: containerapp
+    docker:
+      path: ./backend/Dockerfile
+      context: .

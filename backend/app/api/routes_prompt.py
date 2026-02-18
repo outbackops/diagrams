@@ -96,3 +96,64 @@ async def generate_from_prompt(request: GeneratePromptRequest) -> dict[str, Any]
         "model_used": ai_result.get("model_used", ""),
         "prompt_hash": ai_result.get("prompt_hash", ""),
     }
+
+
+@router.post("/prompts/refine", tags=["Prompts"])
+async def refine_with_prompt(request: RefinePromptRequest) -> dict[str, Any]:
+    """Refine an existing diagram with a follow-up prompt (T064).
+
+    Sends existing code + prompt to AI, returns modified code + diff.
+    """
+    diagram = diagram_service.get(request.diagram_id)
+    if diagram is None:
+        raise HTTPException(status_code=404, detail="Diagram not found")
+
+    if not request.prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+
+    ai_result = await refine_diagram_with_prompt(
+        existing_code=diagram.source_code,
+        user_text=request.prompt,
+    )
+
+    new_code = ai_result.get("code", diagram.source_code)
+
+    # Validate the new code
+    if new_code != diagram.source_code:
+        validation = validate_code(new_code)
+        if not validation.valid:
+            error_msgs = "; ".join(e.message for e in validation.errors)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Refined code failed validation: {error_msgs}",
+            )
+
+    # Generate unified diff
+    import difflib
+
+    diff_lines = difflib.unified_diff(
+        diagram.source_code.splitlines(keepends=True),
+        new_code.splitlines(keepends=True),
+        fromfile="before",
+        tofile="after",
+    )
+    diff_text = "".join(diff_lines)
+
+    # Update diagram
+    diagram_service.update_from_generation(
+        diagram.id,
+        source_code=new_code,
+        providers=ai_result.get("providers"),
+    )
+
+    updated = diagram_service.get(diagram.id)
+
+    return {
+        "diagram": updated.model_dump(mode="json") if updated else {},
+        "explanation": ai_result.get("explanation", ""),
+        "assumptions": ai_result.get("assumptions", []),
+        "warnings": ai_result.get("warnings", []),
+        "diff": diff_text or None,
+        "model_used": ai_result.get("model_used", ""),
+        "prompt_hash": ai_result.get("prompt_hash", ""),
+    }

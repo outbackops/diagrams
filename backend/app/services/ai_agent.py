@@ -158,23 +158,76 @@ async def refine_diagram_with_prompt(
     existing_code: str,
     user_text: str,
 ) -> dict[str, Any]:
-    """Refine an existing diagram with a follow-up prompt.
+    """Refine an existing diagram with a follow-up prompt (T065).
 
-    Stub — full implementation in Phase 7 (T065).
+    Provides existing code as context, generates modified code,
+    preserving unaffected components.
     """
     model = settings.azure_openai_deployment
     prompt_hash = compute_prompt_hash(user_text, model)
+    system_prompt = build_system_prompt()
+
+    user_message = f"""I have an existing diagram with this code:
+
+```python
+{existing_code}
+```
+
+Please modify this diagram based on the following instruction:
+{user_text}
+
+IMPORTANT:
+- Preserve ALL existing components that are not affected by the change
+- Only modify what is necessary to fulfill the instruction
+- If the instruction would result in an invalid architecture, explain why and suggest alternatives
+- Return the COMPLETE modified code, not just the changes
+
+Return a JSON object with:
+- "code": the complete modified Python code
+- "explanation": what was changed and why
+- "assumptions": any assumptions made
+- "warnings": any potential issues
+- "providers": list of providers used
+"""
+
+    start_time = time.time()
+
+    try:
+        from openai import AsyncAzureOpenAI
+
+        client = AsyncAzureOpenAI()
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.2,
+            max_tokens=4096,
+            response_format={"type": "json_object"},
+        )
+
+        result = json.loads(response.choices[0].message.content or "{}")
+    except Exception:
+        result = {
+            "code": existing_code,
+            "explanation": "AI service unavailable — code unchanged",
+            "assumptions": [],
+            "warnings": ["AI refinement unavailable, returning original code"],
+            "providers": [],
+        }
+
+    duration_ms = int((time.time() - start_time) * 1000)
 
     return {
-        "code": existing_code,
-        "explanation": "Refinement not yet implemented",
-        "assumptions": [],
-        "warnings": ["Refinement feature coming in Phase 7"],
-        "providers": [],
-        "diff": None,
+        "code": result.get("code", existing_code),
+        "explanation": result.get("explanation", ""),
+        "assumptions": result.get("assumptions", []),
+        "warnings": result.get("warnings", []),
+        "providers": result.get("providers", []),
         "model_used": model,
         "prompt_hash": prompt_hash,
-        "duration_ms": 0,
+        "duration_ms": duration_ms,
     }
 
 
