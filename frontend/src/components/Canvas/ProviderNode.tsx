@@ -20,10 +20,15 @@ interface ProviderNodeData {
 
 const ProviderNodeComponent: React.FC<NodeProps> = ({ data, selected }) => {
   const nodeData = data as ProviderNodeData;
-  const iconSrc =
-    nodeData.provider === "custom"
-      ? nodeData.iconPath // Custom nodes use arbitrary icon path (T092)
-      : `/icons/${nodeData.iconPath}`; // Standard provider icons from public/icons/
+
+  // Normalize icon path: strip "resources/" prefix if present, ensure /icons/ prefix
+  let iconSrc = "";
+  if (nodeData.provider === "custom") {
+    iconSrc = nodeData.iconPath;
+  } else if (nodeData.iconPath) {
+    const cleaned = nodeData.iconPath.replace(/^resources\//, "");
+    iconSrc = `/icons/${cleaned}`;
+  }
 
   return (
     <div

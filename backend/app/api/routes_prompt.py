@@ -16,6 +16,7 @@ from app.models.prompt import GeneratePromptRequest, Prompt, PromptType, RefineP
 from app.services.ai_agent import generate_diagram_from_prompt, refine_diagram_with_prompt
 from app.services.code_executor import execute_diagram_code, validate_code
 from app.services.diagram_service import diagram_service
+from app.services.graph_model_builder import build_graph_model
 
 router = APIRouter()
 
@@ -87,8 +88,14 @@ async def generate_from_prompt(request: GeneratePromptRequest) -> dict[str, Any]
     # Reload diagram to get latest state
     updated_diagram = diagram_service.get(diagram.id)
 
+    # Step 7: Build graph model with accurate icon paths from registry
+    graph_model = build_graph_model(code)
+
+    diagram_data = updated_diagram.model_dump(mode="json") if updated_diagram else {}
+    diagram_data["graph_model"] = graph_model
+
     return {
-        "diagram": updated_diagram.model_dump(mode="json") if updated_diagram else {},
+        "diagram": diagram_data,
         "explanation": ai_result.get("explanation", ""),
         "assumptions": ai_result.get("assumptions", []),
         "warnings": ai_result.get("warnings", []),

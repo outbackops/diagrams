@@ -5,10 +5,11 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Azure AI Foundry
-    azure_ai_project_connection_string: str = ""
-    azure_openai_deployment: str = "gpt-4.1"
-    azure_openai_deployment_fallback: str = "gpt-4.1-mini"
+    # Azure OpenAI
+    azure_openai_endpoint: str = ""
+    azure_openai_deployment: str = "gpt-4o"
+    azure_openai_deployment_fallback: str = "gpt-4o"
+    azure_openai_api_version: str = "2024-12-01-preview"
 
     # Application
     app_env: str = "development"

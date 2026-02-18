@@ -43,20 +43,84 @@ When generating architecture diagrams, follow these best-practice layout convent
 # System prompt template
 # ──────────────────────────────────────────────
 
-SYSTEM_PROMPT_TEMPLATE = """You are an expert cloud architecture diagram generator. You generate valid Python code using the `diagrams` library (https://diagrams.mingrammer.com/).
+SYSTEM_PROMPT_TEMPLATE = """You are an expert cloud architect and diagram generator. You produce production-quality architecture diagrams as Python code using the `diagrams` library.
 
-## Rules
+## Critical Rules
 
-1. Generate ONLY valid Python code that uses the `diagrams` library API.
-2. Use ONLY node classes that exist in the library. The full registry is provided below.
-3. Every node must be instantiated inside a `with Diagram(...)` context manager.
-4. Use `Cluster` for logical groupings (VPCs, regions, subnets, availability zones).
-5. Use `>>` for forward edges, `<<` for reverse edges, `-` for undirected edges.
-6. Set `show=False` in the Diagram constructor.
-7. Use `outformat="png"` (or the requested format).
-8. Import only from `diagrams` and its submodules. No other imports.
-9. Assign each node to a Python variable with a descriptive snake_case name.
-10. Apply the canonical layout rules below.
+1. Generate ONLY valid Python code using the `diagrams` library API.
+2. Use ONLY node classes from the registry below. Double-check every class name.
+3. Every node MUST be inside a `with Diagram(...)` context manager.
+4. Use `Cluster("label")` for logical groupings (VPCs, regions, subnets, AZs, tiers).
+5. Use `>>` for forward data flow, `<<` for reverse, `-` for bidirectional.
+6. ALWAYS set `show=False` in the Diagram constructor.
+7. Import ONLY from `diagrams` and `diagrams.*` submodules. No os, sys, or other imports.
+8. Give every node a descriptive snake_case variable name AND a descriptive label string.
+9. Chain edges to show data flow: `user >> lb >> app >> db` (not individual pairs).
+
+## Architecture Patterns — Use These
+
+### Three-Tier Web Application
+```python
+from diagrams import Diagram, Cluster
+from diagrams.aws.network import ELB, Route53
+from diagrams.aws.compute import ECS
+from diagrams.aws.database import RDS
+
+with Diagram("Three-Tier Web App", show=False, direction="LR"):
+    dns = Route53("DNS")
+    with Cluster("VPC"):
+        lb = ELB("Load Balancer")
+        with Cluster("Application Tier"):
+            app1 = ECS("App Server 1")
+            app2 = ECS("App Server 2")
+        with Cluster("Data Tier"):
+            db = RDS("Primary DB")
+    dns >> lb >> [app1, app2] >> db
+```
+
+### Serverless Event-Driven
+```python
+from diagrams import Diagram, Cluster
+from diagrams.aws.network import APIGateway
+from diagrams.aws.compute import Lambda
+from diagrams.aws.database import Dynamodb
+from diagrams.aws.integration import SQS, SNS
+
+with Diagram("Serverless Architecture", show=False, direction="LR"):
+    api = APIGateway("API Gateway")
+    with Cluster("Processing"):
+        fn = Lambda("Handler")
+        queue = SQS("Task Queue")
+        worker = Lambda("Worker")
+    db = Dynamodb("Data Store")
+    notify = SNS("Notifications")
+    api >> fn >> queue >> worker >> db
+    worker >> notify
+```
+
+### Microservices with Kubernetes
+```python
+from diagrams import Diagram, Cluster
+from diagrams.k8s.network import Ingress, Service
+from diagrams.k8s.compute import Deployment, Pod
+from diagrams.k8s.storage import PV
+
+with Diagram("K8s Microservices", show=False, direction="TB"):
+    ingress = Ingress("Ingress Controller")
+    with Cluster("Namespace: production"):
+        with Cluster("Frontend"):
+            fe_svc = Service("Frontend Svc")
+            fe_deploy = Deployment("Frontend")
+        with Cluster("Backend API"):
+            api_svc = Service("API Svc")
+            api_deploy = Deployment("API")
+        with Cluster("Database"):
+            db_svc = Service("DB Svc")
+            db_deploy = Deployment("PostgreSQL")
+            storage = PV("Persistent Volume")
+    ingress >> fe_svc >> fe_deploy >> api_svc >> api_deploy >> db_svc >> db_deploy
+    db_deploy - storage
+```
 
 {canonical_layout_rules}
 
@@ -66,14 +130,14 @@ SYSTEM_PROMPT_TEMPLATE = """You are an expert cloud architecture diagram generat
 
 ## Output Format
 
-Return a JSON object with these fields:
-- "code": The complete Python code as a string
-- "explanation": A brief explanation of architectural decisions made
-- "assumptions": A list of assumptions made about the architecture
-- "warnings": A list of any unsupported services or potential issues
-- "providers": A list of cloud providers used (e.g., ["aws", "gcp"])
+Return a JSON object with:
+- "code": Complete Python code as a string. Must be valid, runnable, and follow the patterns above.
+- "explanation": Brief explanation of the architecture and why you chose these components.
+- "assumptions": List of assumptions about the user's requirements.
+- "warnings": List of unsupported services or potential issues (empty list if none).
+- "providers": List of cloud providers used (e.g., ["aws"]).
 
-Return ONLY the JSON object, no markdown formatting.
+Return ONLY the JSON object, no markdown code blocks or extra text.
 """
 
 
@@ -85,9 +149,40 @@ def compute_prompt_hash(
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def build_system_prompt() -> str:
-    """Build the full system prompt with node registry context."""
-    registry_text = node_registry.get_registry_context()
+def build_system_prompt(providers_filter: list[str] | None = None) -> str:
+    """Build the system prompt with node registry context.
+    
+    If providers_filter is given, only include those providers to reduce token usage.
+    """
+    if providers_filter:
+        # Only include requested providers
+        lines = []
+        for p in providers_filter:
+            nodes = node_registry.get_nodes_for_provider(p)
+            if nodes:
+                by_cat: dict[str, list[str]] = {}
+                for n in nodes:
+                    by_cat.setdefault(n.category, []).append(n.class_name)
+                lines.append(f"\n## Provider: {p}")
+                for cat, classes in sorted(by_cat.items()):
+                    lines.append(f"  {cat}: {', '.join(sorted(classes))}")
+        registry_text = "\n".join(lines)
+    else:
+        # Include top providers only to keep prompt under token limits
+        top_providers = ["aws", "azure", "gcp", "k8s", "onprem"]
+        lines = []
+        for p in top_providers:
+            nodes = node_registry.get_nodes_for_provider(p)
+            if nodes:
+                by_cat: dict[str, list[str]] = {}
+                for n in nodes:
+                    by_cat.setdefault(n.category, []).append(n.class_name)
+                lines.append(f"\n## Provider: {p}")
+                for cat, classes in sorted(by_cat.items()):
+                    lines.append(f"  {cat}: {', '.join(sorted(classes))}")
+        lines.append(f"\n## Other providers available: {', '.join(p for p in node_registry.providers if p not in top_providers)}")
+        registry_text = "\n".join(lines)
+
     return SYSTEM_PROMPT_TEMPLATE.format(
         canonical_layout_rules=CANONICAL_LAYOUT_RULES,
         node_registry=registry_text,
@@ -107,7 +202,7 @@ async def generate_diagram_from_prompt(
     """
     model = settings.azure_openai_deployment
     prompt_hash = compute_prompt_hash(user_text, model)
-    system_prompt = build_system_prompt()
+    system_prompt = build_system_prompt(providers_filter=providers)
 
     user_message = user_text
     if providers:
@@ -118,9 +213,17 @@ async def generate_diagram_from_prompt(
 
     try:
         from openai import AsyncAzureOpenAI
+        from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
-        # Attempt to use Azure OpenAI
-        client = AsyncAzureOpenAI()
+        token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(),
+            "https://cognitiveservices.azure.com/.default",
+        )
+        client = AsyncAzureOpenAI(
+            azure_endpoint=settings.azure_openai_endpoint,
+            azure_ad_token_provider=token_provider,
+            api_version=settings.azure_openai_api_version,
+        )
         response = await client.chat.completions.create(
             model=model,
             messages=[
@@ -194,8 +297,17 @@ Return a JSON object with:
 
     try:
         from openai import AsyncAzureOpenAI
+        from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
-        client = AsyncAzureOpenAI()
+        token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(),
+            "https://cognitiveservices.azure.com/.default",
+        )
+        client = AsyncAzureOpenAI(
+            azure_endpoint=settings.azure_openai_endpoint,
+            azure_ad_token_provider=token_provider,
+            api_version=settings.azure_openai_api_version,
+        )
         response = await client.chat.completions.create(
             model=model,
             messages=[

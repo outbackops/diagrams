@@ -46,9 +46,15 @@ const App: React.FC = () => {
         setAiWarnings(response.warnings);
         setAiModel(response.model_used);
 
-        // Parse generated code into graph model
-        const model = parseDiagramCode(response.diagram.source_code || "");
-        setGraphModel(model);
+        // Use server-provided graph model (has accurate icon paths from registry)
+        const graphModel = (response.diagram as any).graph_model;
+        if (graphModel && graphModel.nodes && graphModel.nodes.length > 0) {
+          setGraphModel(graphModel);
+        } else {
+          // Fallback to client-side parser
+          const model = parseDiagramCode(response.diagram.source_code || "");
+          setGraphModel(model);
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to generate diagram";
