@@ -79,24 +79,27 @@ def build_graph_model(source_code: str) -> dict[str, Any]:
 
     # Parse edges: handle chained expressions like a >> b >> c and list targets [a, b]
     edge_idx = 0
-    # First find all edge lines
     for line in source_code.split("\n"):
-        line = line.strip()
-        if ">>" not in line and "<<" not in line:
+        stripped = line.strip()
+        # Skip empty, comments, imports, with-statements, and assignments
+        if not stripped or stripped.startswith("#") or stripped.startswith("from ") or stripped.startswith("import "):
             continue
-        if line.startswith("#") or line.startswith("with ") or "=" in line.split(">>")[0].split("<<")[0]:
-            # Skip comments, context managers, and assignments that contain >> in value
-            if "=" in line:
-                # But allow edges like: x = a >> b (though uncommon)
-                pass
+        if stripped.startswith("with "):
             continue
-        # Split by >> or << operators
-        parts = re.split(r'\s*(>>|<<|-)\s*', line)
+        # Only process lines that contain edge operators AND don't have = before the first >>/<</- 
+        if ">>" not in stripped and "<<" not in stripped and " - " not in stripped:
+            continue
+        # Skip node declaration lines: var = ClassName(...)
+        if re.match(r'^\w+\s*=\s*\w+\(', stripped):
+            continue
+
+        # Split by >> or << operators (but not -)
+        parts = re.split(r'\s*(>>|<<)\s*', stripped)
         prev_nodes: list[str] = []
         prev_op = ">>"
         for part in parts:
             part = part.strip()
-            if part in (">>", "<<", "-"):
+            if part in (">>", "<<"):
                 prev_op = part
                 continue
             # Part could be a single var or [list]
@@ -104,7 +107,9 @@ def build_graph_model(source_code: str) -> dict[str, Any]:
                 inner = part[1:-1]
                 current_nodes = [v.strip() for v in inner.split(",") if v.strip()]
             else:
-                current_nodes = [part] if part else []
+                # Clean trailing comments or semicolons
+                varname = re.match(r'^(\w+)', part)
+                current_nodes = [varname.group(1)] if varname else []
 
             if prev_nodes and current_nodes:
                 direction = "forward" if prev_op == ">>" else "reverse" if prev_op == "<<" else "none"
@@ -124,6 +129,21 @@ def build_graph_model(source_code: str) -> dict[str, Any]:
 
             if current_nodes:
                 prev_nodes = current_nodes
+
+    # Also parse standalone - edges: a - b (bidirectional)
+    for match in re.finditer(r'^[ \t]+(\w+)\s+-\s+(\w+)\s*$', source_code, re.MULTILINE):
+        src, tgt = match.group(1), match.group(2)
+        if src in node_vars and tgt in node_vars:
+            edges.append({
+                "id": f"edge_{edge_idx}",
+                "sourceNodeId": src,
+                "targetNodeId": tgt,
+                "direction": "none",
+                "label": None,
+                "style": None,
+                "color": None,
+            })
+            edge_idx += 1
 
     # Parse clusters: with Cluster("label"):
     cluster_idx = 0
@@ -172,16 +192,18 @@ def build_graph_model(source_code: str) -> dict[str, Any]:
         layers.append(remaining)
 
     # Position nodes: layers flow left-to-right, nodes in each layer stack vertically
-    x_spacing = 250
-    y_spacing = 150
+    x_spacing = 300
+    y_spacing = 180
+    total_height = max(len(layer) for layer in layers) * y_spacing if layers else 0
     for layer_idx, layer in enumerate(layers):
-        y_offset = -(len(layer) - 1) * y_spacing / 2
+        layer_height = len(layer) * y_spacing
+        y_start = (total_height - layer_height) / 2 + 100
         for node_idx, nid in enumerate(layer):
             for node in nodes:
                 if node["id"] == nid:
                     node["position"] = {
-                        "x": layer_idx * x_spacing + 80,
-                        "y": y_offset + node_idx * y_spacing + 200,
+                        "x": layer_idx * x_spacing + 100,
+                        "y": y_start + node_idx * y_spacing,
                     }
                     break
 

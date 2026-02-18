@@ -1,8 +1,9 @@
 /**
  * DiagramCanvas — React Flow wrapper rendering nodes/edges/clusters from diagramStore.
+ * Uses controlled state pattern with applyNodeChanges/applyEdgeChanges for dragging.
  */
 
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -11,11 +12,13 @@ import {
   type Node,
   type Edge,
   type Connection,
-  type NodeDragHandler,
-  type OnNodesDelete,
-  type OnEdgesDelete,
+  type OnNodesChange,
+  type OnEdgesChange,
+  type NodeChange,
+  type EdgeChange,
   MarkerType,
-  useReactFlow,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -24,7 +27,7 @@ import { ProviderNode } from "./ProviderNode";
 import { ClusterGroup } from "./ClusterGroup";
 import { EdgeConnection } from "./EdgeConnection";
 import { wsClient } from "@/services/wsClient";
-import type { DiagramNode, DiagramEdge, EdgeDirection } from "@/types/diagram";
+import type { DiagramNode, DiagramEdge, DiagramCluster, EdgeDirection } from "@/types/diagram";
 
 // Register custom node and edge types
 const nodeTypes = {
@@ -41,6 +44,7 @@ function toReactFlowNode(node: DiagramNode): Node {
     id: node.id,
     type: "providerNode",
     position: node.position,
+    draggable: true,
     data: {
       label: node.label,
       provider: node.provider,
@@ -48,7 +52,6 @@ function toReactFlowNode(node: DiagramNode): Node {
       service: node.service,
       iconPath: node.iconPath,
     },
-    parentId: node.clusterId || undefined,
   };
 }
 
@@ -83,48 +86,72 @@ function toReactFlowEdge(edge: DiagramEdge): Edge {
 }
 
 export const DiagramCanvas: React.FC = () => {
-  const { nodes, edges, clusters } = useDiagramStore();
+  const storeNodes = useDiagramStore((s) => s.nodes);
+  const storeEdges = useDiagramStore((s) => s.edges);
+  const storeClusters = useDiagramStore((s) => s.clusters);
   const updateNodePosition = useDiagramStore((s) => s.updateNodePosition);
   const removeNode = useDiagramStore((s) => s.removeNode);
   const removeEdge = useDiagramStore((s) => s.removeEdge);
-  const addEdge = useDiagramStore((s) => s.addEdge);
+  const storeAddEdge = useDiagramStore((s) => s.addEdge);
 
-  const rfNodes: Node[] = useMemo(() => {
-    const clusterNodes: Node[] = clusters.map((cluster) => ({
-      id: cluster.id,
-      type: "clusterGroup",
-      position: { x: 0, y: 0 },
-      data: { label: cluster.label, depth: cluster.depth },
-      parentId: cluster.parentClusterId || undefined,
-      style: { width: 300, height: 200 },
-    }));
+  // React Flow controlled state — this is what makes dragging work
+  const [rfNodes, setRfNodes] = useState<Node[]>([]);
+  const [rfEdges, setRfEdges] = useState<Edge[]>([]);
 
-    const diagramNodes = nodes.map(toReactFlowNode);
-    return [...clusterNodes, ...diagramNodes];
-  }, [nodes, clusters]);
+  // Sync store → React Flow state when store changes (new diagram loaded)
+  useEffect(() => {
+    const newNodes = storeNodes.map(toReactFlowNode);
+    setRfNodes(newNodes);
+  }, [storeNodes]);
 
-  const rfEdges: Edge[] = useMemo(() => edges.map(toReactFlowEdge), [edges]);
+  useEffect(() => {
+    setRfEdges(storeEdges.map(toReactFlowEdge));
+  }, [storeEdges]);
 
-  // T048: Drag-to-reposition — update layout sidecar via WebSocket
-  const handleNodeDragStop: NodeDragHandler = useCallback(
-    (_event, node) => {
-      updateNodePosition(node.id, node.position.x, node.position.y);
-      if (wsClient.isConnected) {
-        wsClient.sendCanvasUpdate({
-          action: "move_node",
-          node_id: node.id,
-          position: { x: node.position.x, y: node.position.y },
-        });
+  // Handle node changes (drag, select, remove) — this is the key for draggability
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      setRfNodes((nds) => applyNodeChanges(changes, nds));
+
+      // Sync position changes back to store
+      for (const change of changes) {
+        if (change.type === "position" && change.position && change.dragging === false) {
+          updateNodePosition(change.id, change.position.x, change.position.y);
+          if (wsClient.isConnected) {
+            wsClient.sendCanvasUpdate({
+              action: "move_node",
+              node_id: change.id,
+              position: { x: change.position.x, y: change.position.y },
+            });
+          }
+        }
       }
     },
     [updateNodePosition],
   );
 
-  // T050: Edge drawing — React Flow onConnect
+  // Handle edge changes (select, remove)
+  const onEdgesChange: OnEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      setRfEdges((eds) => applyEdgeChanges(changes, eds));
+
+      for (const change of changes) {
+        if (change.type === "remove") {
+          removeEdge(change.id);
+          if (wsClient.isConnected) {
+            wsClient.sendCanvasUpdate({ action: "remove_edge", edge_id: change.id });
+          }
+        }
+      }
+    },
+    [removeEdge],
+  );
+
+  // Edge drawing — React Flow onConnect
   const handleConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
-      const newEdge = {
+      const newEdge: DiagramEdge = {
         id: `edge_${Date.now()}`,
         sourceNodeId: connection.source,
         targetNodeId: connection.target,
@@ -133,7 +160,7 @@ export const DiagramCanvas: React.FC = () => {
         style: null,
         color: null,
       };
-      addEdge(newEdge);
+      storeAddEdge(newEdge);
       if (wsClient.isConnected) {
         wsClient.sendCanvasUpdate({
           action: "add_edge",
@@ -143,39 +170,7 @@ export const DiagramCanvas: React.FC = () => {
         });
       }
     },
-    [addEdge],
-  );
-
-  // T051: Node delete handler
-  const handleNodesDelete: OnNodesDelete = useCallback(
-    (deleted) => {
-      for (const node of deleted) {
-        removeNode(node.id);
-        if (wsClient.isConnected) {
-          wsClient.sendCanvasUpdate({
-            action: "remove_node",
-            node_id: node.id,
-          });
-        }
-      }
-    },
-    [removeNode],
-  );
-
-  // T051: Edge delete handler
-  const handleEdgesDelete: OnEdgesDelete = useCallback(
-    (deleted) => {
-      for (const edge of deleted) {
-        removeEdge(edge.id);
-        if (wsClient.isConnected) {
-          wsClient.sendCanvasUpdate({
-            action: "remove_edge",
-            edge_id: edge.id,
-          });
-        }
-      }
-    },
-    [removeEdge],
+    [storeAddEdge],
   );
 
   return (
@@ -183,16 +178,17 @@ export const DiagramCanvas: React.FC = () => {
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={handleConnect}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onNodeDragStop={handleNodeDragStop}
-        onConnect={handleConnect}
-        onNodesDelete={handleNodesDelete}
-        onEdgesDelete={handleEdgesDelete}
         deleteKeyCode="Delete"
         fitView
+        fitViewOptions={{ padding: 0.3 }}
         minZoom={0.1}
         maxZoom={2}
+        defaultEdgeOptions={{ animated: true }}
       >
         <Background />
         <Controls />
