@@ -1,0 +1,793 @@
+openapi: "3.1.0"
+info:
+  title: Diagram Agent API
+  version: "1.0.0"
+  description: |
+    REST API for the AI-powered architecture diagramming application.
+    Generates, manages, and exports cloud architecture diagrams using
+    diagram-as-code as the single source of truth.
+
+servers:
+  - url: /api/v1
+    description: Backend API
+
+paths:
+  # ──────────────────────────────────────────────
+  # Diagrams CRUD
+  # ──────────────────────────────────────────────
+  /diagrams:
+    get:
+      operationId: listDiagrams
+      summary: List all diagrams for the current session
+      tags: [Diagrams]
+      responses:
+        "200":
+          description: Array of diagram summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiagramSummary"
+
+    post:
+      operationId: createDiagram
+      summary: Create a new empty diagram
+      tags: [Diagrams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDiagramRequest"
+      responses:
+        "201":
+          description: Diagram created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diagram"
+
+  /diagrams/{diagramId}:
+    parameters:
+      - $ref: "#/components/parameters/diagramId"
+
+    get:
+      operationId: getDiagram
+      summary: Get diagram by ID (includes source code and layout metadata)
+      tags: [Diagrams]
+      responses:
+        "200":
+          description: Full diagram with source code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diagram"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateDiagram
+      summary: Update diagram source code and/or layout metadata
+      tags: [Diagrams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDiagramRequest"
+      responses:
+        "200":
+          description: Diagram updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diagram"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteDiagram
+      summary: Delete a diagram
+      tags: [Diagrams]
+      responses:
+        "204":
+          description: Diagram deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /diagrams/{diagramId}/render:
+    parameters:
+      - $ref: "#/components/parameters/diagramId"
+
+    post:
+      operationId: renderDiagram
+      summary: Execute diagram source code and return rendered image
+      tags: [Diagrams]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum: [png, svg, pdf, dot]
+                  default: svg
+      responses:
+        "200":
+          description: Rendered diagram
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /diagrams/{diagramId}/versions:
+    parameters:
+      - $ref: "#/components/parameters/diagramId"
+
+    get:
+      operationId: listDiagramVersions
+      summary: List version history of a diagram
+      tags: [Diagrams]
+      responses:
+        "200":
+          description: Version history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiagramVersion"
+
+  # ──────────────────────────────────────────────
+  # AI Prompt — Generate & Refine
+  # ──────────────────────────────────────────────
+  /prompts/generate:
+    post:
+      operationId: generateFromPrompt
+      summary: Generate a new diagram from a natural-language prompt
+      tags: [Prompts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePromptRequest"
+      responses:
+        "200":
+          description: Generated diagram with AI explanation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /prompts/refine:
+    post:
+      operationId: refineWithPrompt
+      summary: Refine an existing diagram with a follow-up prompt
+      tags: [Prompts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefinePromptRequest"
+      responses:
+        "200":
+          description: Refined diagram with diff and explanation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # IaC Import
+  # ──────────────────────────────────────────────
+  /import/file:
+    post:
+      operationId: importIaCFile
+      summary: Upload an IaC file and generate a diagram
+      tags: [Import]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, format]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The IaC file (Terraform, CloudFormation, Bicep, or K8s YAML)
+                format:
+                  type: string
+                  enum: [terraform, cloudformation, bicep, kubernetes]
+      responses:
+        "200":
+          description: Parsed resources and generated diagram
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /import/repository:
+    post:
+      operationId: importRepository
+      summary: Connect a repository and scan for IaC files
+      tags: [Import]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportRepoRequest"
+      responses:
+        "200":
+          description: Discovered IaC files and resource summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepoScanResponse"
+
+  /import/repository/confirm:
+    post:
+      operationId: confirmRepoImport
+      summary: Confirm repository import and generate diagram from selected files
+      tags: [Import]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmRepoImportRequest"
+      responses:
+        "200":
+          description: Generated diagram from selected IaC files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResponse"
+
+  # ──────────────────────────────────────────────
+  # Export
+  # ──────────────────────────────────────────────
+  /export/{diagramId}:
+    parameters:
+      - $ref: "#/components/parameters/diagramId"
+
+    post:
+      operationId: exportDiagram
+      summary: Export diagram as image, code, or shareable link
+      tags: [Export]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportRequest"
+      responses:
+        "200":
+          description: Export result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # Node Registry
+  # ──────────────────────────────────────────────
+  /registry/providers:
+    get:
+      operationId: listProviders
+      summary: List all available providers
+      tags: [Registry]
+      responses:
+        "200":
+          description: Provider list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example: ["aws", "azure", "gcp", "k8s", "onprem"]
+
+  /registry/providers/{provider}/nodes:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listProviderNodes
+      summary: List all available nodes for a provider
+      tags: [Registry]
+      responses:
+        "200":
+          description: Node registry for the provider
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NodeRegistryEntry"
+
+  /registry/search:
+    get:
+      operationId: searchNodes
+      summary: Search nodes across all providers by name
+      tags: [Registry]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+      responses:
+        "200":
+          description: Matching nodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NodeRegistryEntry"
+
+  # ──────────────────────────────────────────────
+  # Validate (code health check)
+  # ──────────────────────────────────────────────
+  /validate:
+    post:
+      operationId: validateCode
+      summary: Validate diagram Python code without executing
+      tags: [Validation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_code]
+              properties:
+                source_code:
+                  type: string
+                  description: Diagram Python code to validate
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+
+# ════════════════════════════════════════════════
+# Components
+# ════════════════════════════════════════════════
+components:
+  parameters:
+    diagramId:
+      name: diagramId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    # ── Diagram ──
+    DiagramSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        providers:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    Diagram:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        source_code:
+          type: string
+          description: Diagram-as-code Python source (single source of truth)
+        dot_source:
+          type: string
+          nullable: true
+          description: Derived DOT representation
+        layout_metadata:
+          $ref: "#/components/schemas/LayoutMetadata"
+        providers:
+          type: array
+          items:
+            type: string
+        theme:
+          type: string
+          enum: [neutral, pastel, blues, greens, orange]
+        direction:
+          type: string
+          enum: [TB, BT, LR, RL]
+        version:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateDiagramRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        theme:
+          type: string
+          enum: [neutral, pastel, blues, greens, orange]
+          default: neutral
+        direction:
+          type: string
+          enum: [TB, BT, LR, RL]
+          default: LR
+
+    UpdateDiagramRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        source_code:
+          type: string
+        layout_metadata:
+          $ref: "#/components/schemas/LayoutMetadata"
+
+    DiagramVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        change_summary:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    LayoutMetadata:
+      type: object
+      nullable: true
+      properties:
+        version:
+          type: integer
+          default: 1
+        engine:
+          type: string
+          default: dot
+        node_positions:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              x:
+                type: number
+              "y":
+                type: number
+              pinned:
+                type: boolean
+        cluster_bounds:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              x:
+                type: number
+              "y":
+                type: number
+              width:
+                type: number
+              height:
+                type: number
+        viewport:
+          type: object
+          properties:
+            zoom:
+              type: number
+              default: 1.0
+            pan_x:
+              type: number
+              default: 0.0
+            pan_y:
+              type: number
+              default: 0.0
+
+    # ── Prompts ──
+    GeneratePromptRequest:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+          maxLength: 5000
+          description: Natural language architecture description
+        providers:
+          type: array
+          items:
+            type: string
+          description: Optional — restrict to specific providers
+        theme:
+          type: string
+          enum: [neutral, pastel, blues, greens, orange]
+          default: neutral
+        direction:
+          type: string
+          enum: [TB, BT, LR, RL]
+          default: LR
+
+    RefinePromptRequest:
+      type: object
+      required: [diagram_id, prompt]
+      properties:
+        diagram_id:
+          type: string
+          format: uuid
+        prompt:
+          type: string
+          maxLength: 5000
+          description: Follow-up instruction to modify the diagram
+
+    PromptResponse:
+      type: object
+      properties:
+        diagram:
+          $ref: "#/components/schemas/Diagram"
+        explanation:
+          type: string
+          description: AI's reasoning and assumptions (FR-011)
+        assumptions:
+          type: array
+          items:
+            type: string
+          description: List of assumptions the AI made
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Unsupported services or potential issues
+        diff:
+          type: string
+          nullable: true
+          description: Unified diff (for refine operations only)
+        model_used:
+          type: string
+          description: AI model that generated the response
+        prompt_hash:
+          type: string
+          description: SHA-256 for reproducibility
+
+    # ── Import ──
+    ImportRepoRequest:
+      type: object
+      required: [repo_url]
+      properties:
+        repo_url:
+          type: string
+          description: GitHub repository URL
+        branch:
+          type: string
+          default: main
+        path_filter:
+          type: string
+          nullable: true
+          description: Optional path prefix to scan (e.g., "infra/")
+
+    RepoScanResponse:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+              format:
+                type: string
+                enum: [terraform, cloudformation, bicep, kubernetes]
+              resource_count:
+                type: integer
+        total_resources:
+          type: integer
+
+    ConfirmRepoImportRequest:
+      type: object
+      required: [repo_url, selected_files]
+      properties:
+        repo_url:
+          type: string
+        selected_files:
+          type: array
+          items:
+            type: string
+          description: File paths the user confirmed for import
+
+    ImportResponse:
+      type: object
+      properties:
+        diagram:
+          $ref: "#/components/schemas/Diagram"
+        parsed_resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParsedResource"
+        unsupported_services:
+          type: array
+          items:
+            type: string
+          description: Services not in the diagrams library (shown as Custom nodes)
+        explanation:
+          type: string
+
+    ParsedResource:
+      type: object
+      properties:
+        resource_type:
+          type: string
+          description: IaC resource type (e.g., "aws_instance")
+        resource_name:
+          type: string
+        mapped_node:
+          type: string
+          nullable: true
+          description: Diagrams node class (e.g., "diagrams.aws.compute.EC2")
+        relationships:
+          type: array
+          items:
+            type: string
+          description: Other resource names this resource references
+
+    # ── Export ──
+    ExportRequest:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [png, svg, pdf, py, share]
+
+    ExportResponse:
+      type: object
+      properties:
+        format:
+          type: string
+        download_url:
+          type: string
+          nullable: true
+          description: Temporary download URL for image/code exports
+        share_url:
+          type: string
+          nullable: true
+          description: Public shareable URL (for share format)
+        content_base64:
+          type: string
+          nullable: true
+          description: Base64-encoded content (for small exports)
+
+    # ── Registry ──
+    NodeRegistryEntry:
+      type: object
+      properties:
+        provider:
+          type: string
+        category:
+          type: string
+        class_name:
+          type: string
+        aliases:
+          type: array
+          items:
+            type: string
+        icon_path:
+          type: string
+        module_path:
+          type: string
+          description: Full import path (e.g., "diagrams.aws.compute.EC2")
+
+    # ── Validation ──
+    ValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              line:
+                type: integer
+              column:
+                type: integer
+              message:
+                type: string
+              severity:
+                type: string
+                enum: [error, warning]
+        node_count:
+          type: integer
+          nullable: true
+        edge_count:
+          type: integer
+          nullable: true
+        providers_used:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    # ── Common ──
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+          nullable: true
