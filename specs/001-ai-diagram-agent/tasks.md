@@ -17,13 +17,13 @@
 
 **Purpose**: Backend and frontend project initialization, dependency installation, and base configuration
 
-- [ ] T001 Create backend project structure with pyproject.toml, requirements.txt, and .env.example in backend/
-- [ ] T002 [P] Create frontend project with Vite + React + TypeScript scaffold in frontend/ (npm create vite@latest)
-- [ ] T003 [P] Configure backend linting (pylint, isort, black) in backend/pyproject.toml
-- [ ] T004 [P] Configure frontend linting (ESLint, Prettier) and Tailwind CSS in frontend/
-- [ ] T005 [P] Create backend Dockerfile with Python 3.11, Graphviz, and diagrams library in backend/Dockerfile
-- [ ] T006 [P] Create TypeScript type definitions for API request/response schemas in frontend/src/types/api.ts
-- [ ] T007 [P] Create TypeScript type definitions for diagram graph model (Node, Edge, Cluster) in frontend/src/types/diagram.ts
+- [X] T001 Create backend project structure with pyproject.toml, requirements.txt, and .env.example in backend/
+- [X] T002 [P] Create frontend project with Vite + React + TypeScript scaffold in frontend/ (npm create vite@latest)
+- [X] T003 [P] Configure backend linting (pylint, isort, black) in backend/pyproject.toml
+- [X] T004 [P] Configure frontend linting (ESLint, Prettier) and Tailwind CSS in frontend/
+- [X] T005 [P] Create backend Dockerfile with Python 3.11, Graphviz, and diagrams library in backend/Dockerfile
+- [X] T006 [P] Create TypeScript type definitions for API request/response schemas in frontend/src/types/api.ts
+- [X] T007 [P] Create TypeScript type definitions for diagram graph model (Node, Edge, Cluster) in frontend/src/types/diagram.ts
 
 ---
 
@@ -33,30 +33,48 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 Implement FastAPI application entry point with CORS, mount points, and health check in backend/app/main.py
-- [ ] T009 Implement settings and environment configuration with Pydantic BaseSettings in backend/app/config.py
-- [ ] T010 [P] Implement Diagram and DiagramVersion Pydantic models per data-model.md in backend/app/models/diagram.py
-- [ ] T011 [P] Implement Prompt and AIDecisionLog Pydantic models per data-model.md in backend/app/models/prompt.py
-- [ ] T012 [P] Implement IaCSource and ParsedResource Pydantic models per data-model.md in backend/app/models/iac.py
-- [ ] T013 Implement node registry service that introspects the diagrams library to build provider→category→service map in backend/app/services/node_registry.py
-- [ ] T014 Implement AST-based code validator — whitelist diagrams imports, reject unsafe patterns, validate node class references in backend/app/services/code_executor.py
-- [ ] T015 Implement sandboxed code executor — subprocess with resource limits, temp directory, non-root user in backend/app/services/code_executor.py
-- [ ] T016 Implement layout sidecar service — read/write LayoutMetadata JSON, merge pinned positions in backend/app/services/layout_service.py
-- [ ] T017 Implement diagram CRUD service — create, read, update, delete, versioning in backend/app/services/diagram_service.py
-- [ ] T018 [P] Implement REST API routes for diagrams CRUD per openapi.yaml (GET/POST /diagrams, GET/PUT/DELETE /diagrams/{id}, GET /diagrams/{id}/versions) in backend/app/api/routes_diagram.py
-- [ ] T019 [P] Implement REST API routes for node registry (GET /registry/providers, GET /registry/providers/{provider}/nodes, GET /registry/search) in backend/app/api/routes_diagram.py
-- [ ] T020 [P] Implement REST API route for code validation (POST /validate) in backend/app/api/routes_diagram.py
-- [ ] T021 [P] Implement render endpoint (POST /diagrams/{id}/render) that executes code and returns PNG/SVG/PDF in backend/app/api/routes_diagram.py
-- [ ] T022 [P] Create Zustand store for diagram graph model (nodes, edges, clusters, CRUD actions) in frontend/src/stores/diagramStore.ts
-- [ ] T023 [P] Create Zustand store for code editor state (source code, dirty flag, error markers) in frontend/src/stores/codeStore.ts
-- [ ] T024 [P] Create Zustand store for session state (diagram ID, auto-save timer, connection status) in frontend/src/stores/sessionStore.ts
-- [ ] T025 [P] Implement REST API client with fetch wrapper for all backend endpoints in frontend/src/services/apiClient.ts
-- [ ] T026 Implement Graphviz WASM layout service — load @hpcc-js/wasm, compute layout from DOT string, extract node positions in frontend/src/services/graphvizLayout.ts
-- [ ] T027 [P] Implement application shell layout with Toolbar, Sidebar, and resizable SplitPane in frontend/src/components/Layout/Toolbar.tsx, Sidebar.tsx, SplitPane.tsx
-- [ ] T028 Implement App.tsx root component wiring layout, stores, and routing in frontend/src/App.tsx
-- [ ] T029 Copy provider icons from resources/ to frontend/public/icons/ via build script (add npm script "copy-icons" to frontend/package.json)
+- [X] T008 Implement FastAPI application entry point with CORS, mount points, and health check in backend/app/main.py
+- [X] T009 Implement settings and environment configuration with Pydantic BaseSettings in backend/app/config.py
+- [X] T010 [P] Implement Diagram and DiagramVersion Pydantic models per data-model.md in backend/app/models/diagram.py
+- [X] T011 [P] Implement Prompt and AIDecisionLog Pydantic models per data-model.md in backend/app/models/prompt.py
+- [X] T012 [P] Implement IaCSource and ParsedResource Pydantic models per data-model.md in backend/app/models/iac.py
+- [X] T013 Implement node registry service that introspects the diagrams library to build provider→category→service map in backend/app/services/node_registry.py
+- [X] T014 Implement AST-based code validator — whitelist diagrams imports, reject unsafe patterns, validate node class references in backend/app/services/code_executor.py
+- [X] T015 Implement sandboxed code executor — subprocess with resource limits, temp directory, non-root user in backend/app/services/code_executor.py
+- [X] T016 Implement layout sidecar service — read/write LayoutMetadata JSON, merge pinned positions in backend/app/services/layout_service.py
+- [X] T017 Implement diagram CRUD service — create, read, update, delete, versioning in backend/app/services/diagram_service.py
+- [X] T018 [P] Implement REST API routes for diagrams CRUD per openapi.yaml (GET/POST /diagrams, GET/PUT/DELETE /diagrams/{id}, GET /diagrams/{id}/versions) in backend/app/api/routes_diagram.py
+- [X] T019 [P] Implement REST API routes for node registry (GET /registry/providers, GET /registry/providers/{provider}/nodes, GET /registry/search) in backend/app/api/routes_diagram.py
+- [X] T020 [P] Implement REST API route for code validation (POST /validate) in backend/app/api/routes_diagram.py
+- [X] T021 [P] Implement render endpoint (POST /diagrams/{id}/render) that executes code and returns PNG/SVG/PDF in backend/app/api/routes_diagram.py
+- [X] T022 [P] Create Zustand store for diagram graph model (nodes, edges, clusters, CRUD actions) in frontend/src/stores/diagramStore.ts
+- [X] T023 [P] Create Zustand store for code editor state (source code, dirty flag, error markers) in frontend/src/stores/codeStore.ts
+- [X] T024 [P] Create Zustand store for session state (diagram ID, auto-save timer, connection status) in frontend/src/stores/sessionStore.ts
+- [X] T025 [P] Implement REST API client with fetch wrapper for all backend endpoints in frontend/src/services/apiClient.ts
+- [X] T026 Implement Graphviz WASM layout service — load @hpcc-js/wasm, compute layout from DOT string, extract node positions in frontend/src/services/graphvizLayout.ts
+- [X] T027 [P] Implement application shell layout with Toolbar, Sidebar, and resizable SplitPane in frontend/src/components/Layout/Toolbar.tsx, Sidebar.tsx, SplitPane.tsx
+- [X] T028 Implement App.tsx root component wiring layout, stores, and routing in frontend/src/App.tsx
+- [X] T029 Copy provider icons from resources/ to frontend/public/icons/ via build script (add npm script "copy-icons" to frontend/package.json)
 
 **Checkpoint**: Foundation ready — backend API running with CRUD + validation + rendering; frontend shell with stores and layout engine ready
+
+---
+
+## Phase 2.5: Pre-Implementation Remediation
+
+**Purpose**: Fix specification gaps, inconsistencies, and missing coverage identified during project analysis. MUST complete before any user story implementation begins.
+
+- [X] T089 [P] Add `status` field (draft | generated | editing) to Diagram Pydantic model and wire state transitions in create/update/generate flows in backend/app/models/diagram.py
+- [X] T090 [P] Define canonical layout rules (VPC as cluster, subnets nested, LB left, DB right, data flow LR, multi-region top-to-bottom) in AI system prompt template in backend/app/services/ai_agent.py
+- [X] T091 [P] Add `prompt_hash` computation (SHA-256 of user_text + model + parameters) to AI agent service and include in all PromptResponse payloads in backend/app/services/ai_agent.py
+- [X] T092 [P] Add Custom node support to ProviderNode component — detect `custom` provider, render arbitrary icon_path without provider/category lookup in frontend/src/components/Canvas/ProviderNode.tsx
+- [X] T093 [P] Add Custom node support to code executor — allow `diagrams.custom.Custom` in AST whitelist and validate icon_path exists in backend/app/services/code_executor.py
+- [X] T094 [P] Add GET /share/{shareId} endpoint to serve read-only rendered diagram view in backend/app/api/routes_export.py and update contracts/openapi.yaml
+- [X] T095 [P] Add public-repo-only validation to repository import endpoint — reject non-public URLs with clear error message, document limitation in backend/app/api/routes_iac.py
+- [X] T096 [P] Add canonical layout enforcement to IaC parser AI prompt — include layout rules from T090 when generating diagrams from IaC in backend/app/services/iac_parser.py
+- [X] T097 Document codeGenerator.ts placement rationale — add comment in frontend/src/services/codeGenerator.ts explaining it is intentionally Phase 5 (US3) because US2 is code→canvas only; canvas→code requires US3
+
+**Checkpoint**: All specification gaps resolved — implementation can proceed with full consistency
 
 ---
 
@@ -68,17 +86,17 @@
 
 ### Implementation for User Story 1
 
-- [ ] T030 [US1] Implement AI agent service — build system prompt with node registry context, call GPT-4.1, parse structured output in backend/app/services/ai_agent.py
-- [ ] T031 [US1] Create system prompt template that includes full node registry, diagram code examples, and output format requirements in backend/app/services/ai_agent.py
-- [ ] T032 [US1] Implement generate-from-prompt endpoint (POST /prompts/generate) per openapi.yaml in backend/app/api/routes_prompt.py
-- [ ] T033 [US1] Wire generation flow: prompt → AI → AST validation → sandboxed execution → render → return diagram + explanation in backend/app/api/routes_prompt.py
-- [ ] T034 [US1] Implement PromptInput component — text input with submit button, loading state, example prompts in frontend/src/components/Prompt/PromptInput.tsx
-- [ ] T035 [US1] Implement AIExplanation component — display AI assumptions, reasoning, and warnings in frontend/src/components/Prompt/AIExplanation.tsx
-- [ ] T036 [US1] Implement ProviderNode component — custom React Flow node rendering provider icon + label in frontend/src/components/Canvas/ProviderNode.tsx
-- [ ] T037 [US1] Implement ClusterGroup component — nested container with themed background and label in frontend/src/components/Canvas/ClusterGroup.tsx
-- [ ] T038 [US1] Implement EdgeConnection component — custom React Flow edge with direction arrows in frontend/src/components/Canvas/EdgeConnection.tsx
-- [ ] T039 [US1] Implement DiagramCanvas component — React Flow wrapper rendering nodes/edges/clusters from diagramStore in frontend/src/components/Canvas/DiagramCanvas.tsx
-- [ ] T040 [US1] Wire prompt submission flow: PromptInput → apiClient.generateFromPrompt → update diagramStore + codeStore → render on canvas in frontend/src/App.tsx
+- [X] T030 [US1] Implement AI agent service — build system prompt with node registry context, call GPT-4.1, parse structured output in backend/app/services/ai_agent.py
+- [X] T031 [US1] Create system prompt template that includes full node registry, diagram code examples, and output format requirements in backend/app/services/ai_agent.py
+- [X] T032 [US1] Implement generate-from-prompt endpoint (POST /prompts/generate) per openapi.yaml in backend/app/api/routes_prompt.py
+- [X] T033 [US1] Wire generation flow: prompt → AI → AST validation → sandboxed execution → render → return diagram + explanation in backend/app/api/routes_prompt.py
+- [X] T034 [US1] Implement PromptInput component — text input with submit button, loading state, example prompts in frontend/src/components/Prompt/PromptInput.tsx
+- [X] T035 [US1] Implement AIExplanation component — display AI assumptions, reasoning, and warnings in frontend/src/components/Prompt/AIExplanation.tsx
+- [X] T036 [US1] Implement ProviderNode component — custom React Flow node rendering provider icon + label in frontend/src/components/Canvas/ProviderNode.tsx
+- [X] T037 [US1] Implement ClusterGroup component — nested container with themed background and label in frontend/src/components/Canvas/ClusterGroup.tsx
+- [X] T038 [US1] Implement EdgeConnection component — custom React Flow edge with direction arrows in frontend/src/components/Canvas/EdgeConnection.tsx
+- [X] T039 [US1] Implement DiagramCanvas component — React Flow wrapper rendering nodes/edges/clusters from diagramStore in frontend/src/components/Canvas/DiagramCanvas.tsx
+- [X] T040 [US1] Wire prompt submission flow: PromptInput → apiClient.generateFromPrompt → update diagramStore + codeStore → render on canvas in frontend/src/App.tsx
 
 **Checkpoint**: User Story 1 fully functional — users can generate diagrams from natural language and see them rendered with icons
 
@@ -223,7 +241,8 @@
 
 - **Setup (Phase 1)**: No dependencies — can start immediately
 - **Foundational (Phase 2)**: Depends on Setup completion — BLOCKS all user stories
-- **User Stories (Phase 3–9)**: All depend on Foundational phase completion
+- **Remediation (Phase 2.5)**: Depends on Phase 2 — BLOCKS all user stories. Fixes spec gaps and adds missing coverage.
+- **User Stories (Phase 3–9)**: All depend on Phase 2.5 (Remediation) completion
   - US1 (Phase 3): Can start after Foundational — no dependencies on other stories
   - US2 (Phase 4): Can start after Foundational — benefits from US1 for test data but not strictly required
   - US3 (Phase 5): Depends on US2 (code parser and WebSocket) — bidirectional sync needs code→canvas first
@@ -306,4 +325,4 @@ T074 → T075 → T076 → T077 → T078 → T079
 6. Phase 9: Foundry agent deployment
 7. Phase 10: Polish
 
-**Total tasks**: 88
+**Total tasks**: 97

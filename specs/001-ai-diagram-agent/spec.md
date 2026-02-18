@@ -17,7 +17,7 @@ A user opens the web application and types a natural-language prompt such as "Th
 
 **Acceptance Scenarios**:
 
-1. **Given** a user on the home screen, **When** they type "AWS Lambda behind API Gateway writing to DynamoDB" and submit, **Then** the system generates Python code using `diagrams.aws.compute.Lambda`, `diagrams.aws.network.APIGateway`, and `diagrams.aws.database.Dynamodb` with correct edges, and renders a matching diagram within 10 seconds.
+1. **Given** a user on the home screen, **When** they type "AWS Lambda behind API Gateway writing to DynamoDB" and submit, **Then** the system generates Python code using `diagrams.aws.compute.Lambda`, `diagrams.aws.network.APIGateway`, and `diagrams.aws.database.Dynamodb` with correct edges, and renders a matching diagram within 15 seconds.
 2. **Given** a user submitting a prompt referencing services from multiple providers (e.g., AWS and GCP), **When** the prompt is processed, **Then** the system generates a multi-provider diagram using the correct provider-specific node classes and icons.
 3. **Given** a user submitting an ambiguous or incomplete prompt, **When** the AI cannot confidently determine the architecture, **Then** it presents clarifying questions or lists its assumptions transparently before generating a diagram.
 4. **Given** a user submitting a prompt referencing a service not in the `diagrams` library, **When** the AI processes it, **Then** the system informs the user which services are unsupported and suggests the closest available alternatives.
@@ -127,7 +127,7 @@ The application is packaged and deployable as an Azure AI Foundry agent. Users c
 - What happens when a user submits an empty or nonsensical prompt? The system returns a clear error message with example prompts and does not generate any diagram code.
 - What happens when the uploaded IaC file is malformed or contains syntax errors? The system reports parsing errors with line numbers and does not attempt to generate a partial diagram from invalid input.
 - What happens when a follow-up prompt contradicts the existing diagram (e.g., "Remove all nodes")? The system warns the user that the action would result in an empty diagram and asks for confirmation.
-- What happens when the code editor and visual canvas are edited simultaneously? The last-saved edit wins; the system does not merge conflicting changes but shows a conflict notification.
+- What happens when the code editor and visual canvas are edited simultaneously? The last-write wins; the system does not merge conflicting changes but shows a conflict notification informing the user which edit was applied.
 - What happens when a diagram exceeds 200 nodes? The system displays a performance warning and offers to split the diagram into sub-diagrams by cluster.
 - What happens when the user's session is interrupted (browser crash, network loss)? The system auto-saves diagram state at regular intervals and restores the last saved state on reconnection.
 - What happens when the Foundry agent receives a request for an unsupported output format? The API returns a 400 error with a list of supported formats.
@@ -192,3 +192,5 @@ The application is packaged and deployable as an Azure AI Foundry agent. Users c
 - The web application frontend will communicate with a backend service that orchestrates AI model calls and `diagrams` library execution.
 - Auto-save intervals default to every 30 seconds; the specific interval may be adjusted based on user feedback.
 - IaC parsing covers the four major formats (Terraform HCL, CloudFormation JSON/YAML, Bicep, Kubernetes YAML); additional formats may be added as extensions.
+- Authentication and multi-user session management are out of scope for MVP. The application runs as a single-user local or single-session tool. Auth (OAuth2 or session-based) will be added in a subsequent iteration.
+- Repository import (FR-009) is restricted to public repositories for MVP. Private repository access (requiring GitHub tokens or OAuth) will be added post-MVP.

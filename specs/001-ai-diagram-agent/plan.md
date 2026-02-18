@@ -16,7 +16,7 @@ Build a web-based AI-powered architecture diagramming application (the "Diagram 
 **Target Platform**: Linux container (backend), modern browsers (frontend), Azure AI Foundry (deployment)  
 **Project Type**: Web application (frontend + backend)  
 **Performance Goals**: <2s re-render for <100 nodes; <15s AI generation for <50 nodes; <30s IaC import for <100 resources  
-**Constraints**: <200ms p95 for code↔canvas sync; diagrams with 200 nodes/500 edges must render without overlap; Graphviz WASM ~4MB initial load  
+**Constraints**: <200ms p95 for WebSocket message transit (one-way); <2s for full code↔canvas round-trip including Graphviz layout recomputation (per SC-003); diagrams with 200 nodes/500 edges must render without overlap; Graphviz WASM ~4MB initial load  
 **Scale/Scope**: Single-user per session initially; 17+ providers with hundreds of node classes; 7 user stories across 4 major capability areas
 
 ## Constitution Check

@@ -31,3 +31,28 @@ website/package-lock.json
 .swp
 *.whl
 dist/
+
+# Backend (Python/FastAPI)
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.log
+backend/.venv/
+backend/dist/
+
+# Frontend (React/Vite/Node)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.tmp
+Thumbs.db

@@ -23,6 +23,7 @@ Represents a complete architecture diagram definition. Central entity — all ot
 | created_at | datetime | auto-set | Creation timestamp |
 | updated_at | datetime | auto-updated | Last modification timestamp |
 | version | integer | auto-increment on save | Version counter for change tracking |
+| status | enum | "draft" \| "generated" \| "editing" | Current lifecycle state |
 
 **Relationships**:
 - Has many DiagramVersion (version history)
